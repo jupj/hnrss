@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/xml"
 	"fmt"
 	"html"
 	"io"
@@ -12,32 +11,6 @@ import (
 )
 
 var _ = os.Stdout
-
-type rssItem struct {
-	Title string `xml:"title"`
-	Link  string `xml:"link"`
-	Comments string `xml:"comments"`
-    Guid string `xml:"guid"`
-	Description string `xml:"description"`
-}
-
-type rss struct {
-	XMLName     xml.Name  `xml:"rss"`
-	Version     string    `xml:"version,attr"`
-	Title       string    `xml:"channel>title"`
-	Link        string    `xml:"channel>link"`
-	Description string    `xml:"channel>description"`
-	Items       []rssItem `xml:"channel>item"`
-}
-
-func (r *rss) print(w io.Writer) {
-	// Writes the xml of the rssfeed to w
-	enc := xml.NewEncoder(w)
-	enc.Indent("", "  ")
-	if err := enc.Encode(r); err != nil {
-		fmt.Printf("error: %v\n", err)
-	}
-}
 
 func getHNsourceFile() string {
     // Read the Hacker News html from a file
@@ -66,7 +39,7 @@ func getHNsourceHttp() string {
 	return html.UnescapeString(string(body))
 }
 
-func parseHnHtmlToRss(html string) (rssfeed *rss) {
+func parseHnHtmlToRss(html string) (rssfeed *Rss) {
     // Parses the Hacker News html and returns an rssfeed
 
 	// Example HN link:
@@ -77,7 +50,7 @@ func parseHnHtmlToRss(html string) (rssfeed *rss) {
     re := regexp.MustCompile(`<td class="title"><a href="(?P<url>[^"]*)">(?P<desc>[^<]*)</a>(?:<span class="comhead">(?P<domain>[^<]*))?.*?href="item\?id=(?P<id>\d+)"`)
 
 
-	rssfeed = &rss{Version: "2.0",
+	rssfeed = &Rss{Version: "2.0",
 		Title:       "Hacker News Top Links",
 		Link:        "https://news.ycombinator.com/best",
 		Description: "Links for the intellectually curious, ranked by readers."}
@@ -91,7 +64,7 @@ func parseHnHtmlToRss(html string) (rssfeed *rss) {
 			domain := match[3]
             id := match[4]
             comments := fmt.Sprintf("https://news.ycombinator.com/item?id=%s", id)
-			rssfeed.Items = append(rssfeed.Items, rssItem{fmt.Sprintf("%s%s", desc, domain),
+			rssfeed.Items = append(rssfeed.Items, RssItem{fmt.Sprintf("%s%s", desc, domain),
 			url,
 			comments,
 			id,
