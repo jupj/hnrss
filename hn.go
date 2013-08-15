@@ -3,43 +3,29 @@ package main
 import (
 	"fmt"
 	"html"
-	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
-	"os"
 	"regexp"
 )
 
-var _ = os.Stdout
+const port = 8081
 
-func getHNsourceFile() string {
-    // Read the Hacker News html from a file
-	//htmlBytes, err := ioutil.ReadFile("hn.html")
-	htmlBytes, err := ioutil.ReadFile("best.htm")
-	if err != nil {
-		fmt.Println(err)
-		return ""
-	}
-	return html.UnescapeString(string(htmlBytes))
-}
-
-func getHNsourceHttp() string {
+func getHNsourceHttp() (string, error) {
     // Read the Hacker News html from the web
     resp, err := http.Get("https://news.ycombinator.com/best")
     if err != nil {
-		fmt.Println(err)
-		return ""
+		return "", err
     }
     defer resp.Body.Close()
     body, err := ioutil.ReadAll(resp.Body)
     if err != nil {
-		fmt.Println(err)
-		return ""
+		return "", err
     }
-	return html.UnescapeString(string(body))
+	return html.UnescapeString(string(body)), nil
 }
 
-func parseHnHtmlToRss(html string) (rssfeed *Rss) {
+func parseHnHtmlToRss(html string) *Rss {
     // Parses the Hacker News html and returns an rssfeed
 
 	// Example HN link:
@@ -50,7 +36,7 @@ func parseHnHtmlToRss(html string) (rssfeed *Rss) {
     re := regexp.MustCompile(`<td class="title"><a href="(?P<url>[^"]*)">(?P<desc>[^<]*)</a>(?:<span class="comhead">(?P<domain>[^<]*))?.*?href="item\?id=(?P<id>\d+)"`)
 
 
-	rssfeed = &Rss{Version: "2.0",
+    rssfeed := &Rss{Version: "2.0",
 		Title:       "Hacker News Top Links",
 		Link:        "https://news.ycombinator.com/best",
 		Description: "Links for the intellectually curious, ranked by readers."}
@@ -71,23 +57,22 @@ func parseHnHtmlToRss(html string) (rssfeed *Rss) {
 			fmt.Sprintf("<p><a href=\"%s\">%s</a> %s<p/><p><a href=\"%s\">Comments</a></p>", url, desc, domain, comments)})
 		}
 	}
-    return
+    return rssfeed
 }
 
-func printHnRss(w io.Writer) {
-    // Prints the Hacker News RSS feed to w
-	rssfeed := parseHnHtmlToRss(getHNsourceHttp())
-	rssfeed.print(w)
-
-}
-
-func handler(w http.ResponseWriter, r *http.Request) {
-    //fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
-    printHnRss(w)
+// hnRssHandler is a http handler that writes the HN RSS feed as the response
+func hnRssHandler(w http.ResponseWriter, r *http.Request) {
+    html, err := getHNsourceHttp()
+    if err != nil {
+        http.Error(w, err.Error(), 500)
+        return
+    }
+	rssfeed := parseHnHtmlToRss(html)
+	rssfeed.printXml(w)
 }
 
 func main() {
-    fmt.Println("Listening on localhost:8080")
+    log.Printf("Listening on localhost:%d\n", port)
 
-    http.HandleFunc("/", handler); http.ListenAndServe(":8080", nil)
+    http.HandleFunc("/", hnRssHandler); http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }

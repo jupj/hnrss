@@ -24,8 +24,8 @@ type RssItem struct {
 	Description string `xml:"description"`
 }
 
-// Print serializes the RSS feed to an io.Writer
-func (r *Rss) print(w io.Writer) error {
+// printXml serializes the RSS feed xml to an io.Writer
+func (r *Rss) printXml(w io.Writer) error {
 	// Writes the xml of the rssfeed to w
 	enc := xml.NewEncoder(w)
 	enc.Indent("", "  ")
