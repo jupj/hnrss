@@ -4,12 +4,9 @@ import (
 	"fmt"
 	"html"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"regexp"
 )
-
-const port = 8081
 
 func getHNsourceHttp() (string, error) {
     // Read the Hacker News html from the web
@@ -69,10 +66,4 @@ func hnRssHandler(w http.ResponseWriter, r *http.Request) {
     }
 	rssfeed := parseHnHtmlToRss(html)
 	rssfeed.printXml(w)
-}
-
-func main() {
-    log.Printf("Listening on localhost:%d\n", port)
-
-    http.HandleFunc("/", hnRssHandler); http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
