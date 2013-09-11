@@ -76,9 +76,9 @@ func main() {
 }
 
 func startHttp() {
-    log.Info("Listening on port %d", port)
-    http.HandleFunc("/", hnRssHandler);
-    http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	log.Info("Listening on port %d", port)
+	http.HandleFunc("/", hnRssHandler)
+	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 func stopHttp() {
 	log.Info("Shutting down")

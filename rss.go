@@ -17,10 +17,10 @@ type Rss struct {
 
 // RssItem is the internal representation for a RSS item
 type RssItem struct {
-	Title string `xml:"title"`
-	Link  string `xml:"link"`
-	Comments string `xml:"comments"`
-    Guid string `xml:"guid"`
+	Title       string `xml:"title"`
+	Link        string `xml:"link"`
+	Comments    string `xml:"comments"`
+	Guid        string `xml:"guid"`
 	Description string `xml:"description"`
 }
 
