@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -220,12 +220,17 @@ var tests = []testItem{
 		guid:     "6336523"}}
 
 func TestHnParsing(t *testing.T) {
-	html, err := ioutil.ReadFile("hn_test.html")
+	htmlReader, err := os.Open("hn_test.html")
 	if err != nil {
 		t.Errorf("Couldn't open 'hn_test.html', error: %s", err)
 	}
+    defer htmlReader.Close()
 
-	rss := parseHnHtmlToRss(string(html))
+	rss, err := parseHnHtmlToRss(htmlReader)
+	if err != nil {
+		t.Error(err)
+	}
+
 
 	if (rss.Version != "2.0") ||
 		(rss.Title != "Hacker News Top Links") ||
