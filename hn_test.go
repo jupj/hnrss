@@ -131,7 +131,7 @@ var tests = []testItem{
 	testItem{
 		title:    "3-Sweep: Extracting Editable Objects from a Single Photo [video]",
 		domain:   " (youtube.com) ",
-		url:      "http://www.youtube.com/watch?v=Oie1ZXWceqM&amp;hd=1",
+		url:      "http://www.youtube.com/watch?v=Oie1ZXWceqM&hd=1",
 		comments: "https://news.ycombinator.com/item?id=6363672",
 		guid:     "6363672"},
 
@@ -151,7 +151,7 @@ var tests = []testItem{
 
 	testItem{
 		title:    "Statement of Condemnation of U.S. Mass-Surveillance Programs [pdf]",
-		domain:   "",
+		domain:   " (ucdavis.edu) ",
 		url:      "http://www.cs.ucdavis.edu/~rogaway/politics/surveillance.pdf",
 		comments: "https://news.ycombinator.com/item?id=6356514",
 		guid:     "6356514"},

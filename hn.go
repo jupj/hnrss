@@ -2,15 +2,14 @@ package main
 
 import (
 	"fmt"
-	//"html"
 	"io"
-	//"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
 	"code.google.com/p/go.net/html"
 )
 
+// hnItem represents one link in the HN links list
 type hnItem struct {
     url,
     desc,
@@ -19,22 +18,41 @@ type hnItem struct {
     comments string
 }
 
-/*
-func getHNsourceHttp() (string, error) {
-	// Read the Hacker News html from the web
-	resp, err := http.Get("https://news.ycombinator.com/best")
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	return html.UnescapeString(string(body)), nil
-}
-*/
+// helper functions for processing the html:
 
+// getAttr retrieves attribute key from n. Returns empty string if not found
+func getAttr(n *html.Node, key string) string {
+    if n == nil {
+        return ""
+    }
+    for _, attr := range n.Attr {
+        if attr.Key == key {
+            return attr.Val
+        }
+    }
+    return ""
+}
+
+// hasAttr checks if n has an attribute key with value val
+func hasAttr(n *html.Node, key, val string) bool {
+    if n == nil {
+        return false
+    }
+    for _, attr := range n.Attr {
+        if attr.Key == key && attr.Val == val {
+            return true
+        }
+    }
+    return false
+}
+
+// isElement tests whether n is an element node of type elem
+func isElement(n *html.Node, elem string) bool {
+    return n != nil && n.Type == html.ElementNode && n.Data == elem
+}
+
+// parseHnHtmlToRss takes a reader for the HN html and returns an *Rss
+// of the links found in the HN html
 func parseHnHtmlToRss(r io.Reader) (rss *Rss, err error) {
 	// Parses the Hacker News html and returns an rssfeed
 
@@ -61,59 +79,32 @@ func parseHnHtmlToRss(r io.Reader) (rss *Rss, err error) {
 		Link:        "https://news.ycombinator.com/best",
 		Description: "Links for the intellectually curious, ranked by readers."}
 
-    // helper functions for processing the html:
-    getAttr := func(n *html.Node, key string) string {
-        if n == nil {
-            return ""
-        }
-        for _, attr := range n.Attr {
-            if attr.Key == key {
-                return attr.Val
-            }
-        }
-        return ""
-    }
-    hasAttr := func(n *html.Node, key, val string) bool {
-        if n == nil {
-            return false
-        }
-        for _, attr := range n.Attr {
-            if attr.Key == key && attr.Val == val {
-                return true
-            }
-        }
-        return false
-    }
-    isElement := func(n *html.Node, elem string) bool {
-        return n != nil && n.Type == html.ElementNode && n.Data == elem
-    }
-    isHnLink := func(n *html.Node) bool {
-        return isElement(n, "a") && isElement(n.Parent, "td") && hasAttr(n.Parent, "class", "title")
-    }
 
     // parse the html tree:
     item := hnItem{}
-    var f func(*html.Node)
-    f = func(n *html.Node) {
-        if isHnLink(n) {
-            // Create a new link
-            item.url = getAttr(n, "href")
-            item.desc = n.FirstChild.Data
-            item.domain = ""
-            if isElement(n.NextSibling, "span") && getAttr(n.NextSibling, "class") == "comhead" {
-                item.domain = n.NextSibling.FirstChild.Data
+    var parse func(*html.Node)
+    parse = func(n *html.Node) {
+        // Find start of item
+        if isElement(n, "td") && hasAttr(n, "class", "title") {
+            if isElement(n.FirstChild, "a") {
+                // Create a new link
+                item.url = getAttr(n.FirstChild, "href")
+                item.desc = n.FirstChild.FirstChild.Data
+                item.domain = ""
             }
-
-            fmt.Println("url:", item.url)
-            fmt.Println("desc:", item.desc)
-            fmt.Println("domain:", item.domain)
         }
 
+        // Find domain
+        if isElement(n.Parent, "td") && hasAttr(n.Parent, "class", "title") &&
+           isElement(n, "span") && hasAttr(n, "class", "comhead") {
+            item.domain = n.FirstChild.Data
+        }
+
+        // Find comment - end of the item
         if isElement(n, "a") && strings.HasPrefix(getAttr(n, "href"), "item?id=") && strings.HasSuffix(n.FirstChild.Data, "comments") {
             item.guid = regexp.MustCompile(`item\?id=(?P<id>\d+)`).FindStringSubmatch(getAttr(n, "href"))[1]
             item.comments = fmt.Sprintf("https://news.ycombinator.com/item?id=%s", item.guid)
-            fmt.Println("guid:", item.guid)
-            fmt.Println("comments:", item.comments)
+
             // Reached the end of this item. Add to feed:
 			rss.Items = append(rss.Items, RssItem{fmt.Sprintf("%s%s", item.desc, item.domain),
 				item.url,
@@ -124,43 +115,13 @@ func parseHnHtmlToRss(r io.Reader) (rss *Rss, err error) {
             item = hnItem{}
         }
 
-
-
         // process the rest of the document
         for c := n.FirstChild; c != nil; c = c.NextSibling {
-            f(c)
+            parse(c)
         }
     }
-    f(doc)
+    parse(doc)
 
-    /*
-    htmlBytes, _ := ioutil.ReadAll(r)
-    html := string(htmlBytes)
-
-	re := regexp.MustCompile(`<td class="title"><a href="(?P<url>[^"]*)">(?P<desc>[^<]*)</a>(?:<span class="comhead">(?P<domain>[^<]*))?.*?href="item\?id=(?P<id>\d+)"`)
-
-	rss := &Rss{Version: "2.0",
-		Title:       "Hacker News Top Links",
-		Link:        "https://news.ycombinator.com/best",
-		Description: "Links for the intellectually curious, ranked by readers."}
-
-	//matches := re.FindAllStringSubmatch(html, -1)
-	matches := re.FindAllStringSubmatch(html, -1)
-	for _, match := range matches {
-		if len(match) > 0 {
-			url := match[1]
-			desc := match[2]
-			domain := match[3]
-			id := match[4]
-			comments := fmt.Sprintf("https://news.ycombinator.com/item?id=%s", id)
-			rss.Items = append(rss.Items, RssItem{fmt.Sprintf("%s%s", desc, domain),
-				url,
-				comments,
-				id,
-				fmt.Sprintf("<p><a href=\"%s\">%s</a> %s<p/><p><a href=\"%s\">Comments</a></p>", url, desc, domain, comments)})
-		}
-	}
-	*/
 	return rss, err
 }
 
