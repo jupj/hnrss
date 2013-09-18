@@ -224,13 +224,12 @@ func TestHnParsing(t *testing.T) {
 	if err != nil {
 		t.Errorf("Couldn't open 'hn_test.html', error: %s", err)
 	}
-    defer htmlReader.Close()
+	defer htmlReader.Close()
 
 	rss, err := parseHnHtmlToRss(htmlReader)
 	if err != nil {
 		t.Error(err)
 	}
-
 
 	if (rss.Version != "2.0") ||
 		(rss.Title != "Hacker News Top Links") ||
