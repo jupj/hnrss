@@ -138,6 +138,8 @@ func hnRssHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
+
+	w.Header().Add("Content-Type", "application/rss+xml; charset=utf-8")
 	rssfeed, err := parseHnHtmlToRss(resp.Body)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
