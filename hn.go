@@ -1,12 +1,13 @@
 package main
 
 import (
-	"code.google.com/p/go.net/html"
 	"fmt"
 	"io"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"golang.org/x/net/html"
 )
 
 // hnItem represents one link in the HN links list
@@ -58,19 +59,19 @@ func parseHnHtmlToRss(r io.Reader) (rss *Rss, err error) {
 
 	// Example HN link:
 	/*
-	<tr>
-	    <td align=right valign=top class="title">1.</td>
-	    <td><center><a id=up_6336178 href="vote?for=6336178&amp;dir=up&amp;whence=%62%65%73%74"><img src="grayarrow.gif" border=0 vspace=3 hspace=2 alt="upvote"></a><span id=down_6336178></span></center></td>
-	    <td class="title">
-	        <a href="http://www.nytimes.com/2013/09/06/us/nsa-foils-much-internet-encryption.html">N.S.A. Foils Much Internet Encryption</a>
-	        <span class="comhead"> (nytimes.com) </span>
-	    </td>
-	</tr>
-	<tr>
-	    <td colspan=2></td>
-	    <td class="subtext"><span id=score_6336178>882 points</span> by <a href="user?id=ebildsten">ebildsten</a> 5 days ago  | <a href="item?id=6336178">386 comments</a></td>
-	</tr>
-	<tr style="height:5px"></tr>
+		<tr>
+		    <td align=right valign=top class="title">1.</td>
+		    <td><center><a id=up_6336178 href="vote?for=6336178&amp;dir=up&amp;whence=%62%65%73%74"><img src="grayarrow.gif" border=0 vspace=3 hspace=2 alt="upvote"></a><span id=down_6336178></span></center></td>
+		    <td class="title">
+		        <a href="http://www.nytimes.com/2013/09/06/us/nsa-foils-much-internet-encryption.html">N.S.A. Foils Much Internet Encryption</a>
+		        <span class="comhead"> (nytimes.com) </span>
+		    </td>
+		</tr>
+		<tr>
+		    <td colspan=2></td>
+		    <td class="subtext"><span id=score_6336178>882 points</span> by <a href="user?id=ebildsten">ebildsten</a> 5 days ago  | <a href="item?id=6336178">386 comments</a></td>
+		</tr>
+		<tr style="height:5px"></tr>
 	*/
 	doc, err := html.Parse(r)
 

@@ -1,27 +1,48 @@
 package main
 
 import (
-	"bitbucket.org/kardianos/service"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
+
+	"github.com/kardianos/service"
 )
 
-const port = 8081
+const defaultPort = 8081
 
-var log service.Logger
+var logger service.Logger
+
+type program struct {
+	port int
+}
+
+func (p program) Start(s service.Service) error {
+	go startHttp(p.port)
+	return nil
+}
+
+func (p program) Stop(s service.Service) error {
+	stopHttp()
+	return nil
+}
 
 func main() {
-	var name = "HnTopRss"
-	var displayName = "HN Top Links RSS"
-	var desc = "RSS feed for Hacker News Top Links"
+	conf := &service.Config{
+		Name:        "HnTopRss",
+		DisplayName: "HN Top Links RSS",
+		Description: "RSS feed for Hacker News Top Links",
+	}
+	prg := &program{defaultPort}
 
-	var s, err = service.NewService(name, displayName, desc)
-	log = s
-
+	s, err := service.New(prg, conf)
 	if err != nil {
-		fmt.Printf("%s unable to start: %s", displayName, err)
-		return
+		log.Fatal(err)
+	}
+
+	logger, err = s.Logger(nil)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	if len(os.Args) > 1 {
@@ -34,52 +55,49 @@ func main() {
 				fmt.Printf("Failed to install: %s\n", err)
 				return
 			}
-			fmt.Printf("Service \"%s\" installed.\n", displayName)
-		case "remove":
-			err = s.Remove()
+			fmt.Printf("Service \"%s\" installed.\n", conf.DisplayName)
+		case "uninstall":
+			err = s.Uninstall()
 			if err != nil {
-				fmt.Printf("Failed to remove: %s\n", err)
+				fmt.Printf("Failed to uninstall: %s\n", err)
 				return
 			}
-			fmt.Printf("Service \"%s\" removed.\n", displayName)
+			fmt.Printf("Service \"%s\" removed.\n", conf.DisplayName)
 		case "run":
-			startHttp()
+			err = s.Run()
+			if err != nil {
+				fmt.Printf("Failed to run: %s\n", err)
+				return
+			}
 		case "start":
 			err = s.Start()
 			if err != nil {
 				fmt.Printf("Failed to start: %s\n", err)
 				return
 			}
-			fmt.Printf("Service \"%s\" started.\n", displayName)
+			fmt.Printf("Service \"%s\" started.\n", conf.DisplayName)
 		case "stop":
 			err = s.Stop()
 			if err != nil {
 				fmt.Printf("Failed to stop: %s\n", err)
 				return
 			}
-			fmt.Printf("Service \"%s\" stopped.\n", displayName)
+			fmt.Printf("Service \"%s\" stopped.\n", conf.DisplayName)
 		}
 		return
 	}
-	err = s.Run(func() error {
-		// start
-		go startHttp()
-		return nil
-	}, func() error {
-		// stop
-		stopHttp()
-		return nil
-	})
+
+	err = s.Run()
 	if err != nil {
-		s.Error(err.Error())
+		logger.Error(err)
 	}
 }
 
-func startHttp() {
-	log.Info("Listening on port %d", port)
+func startHttp(port int) {
+	logger.Infof("Listening on port %d", port)
 	http.HandleFunc("/", hnRssHandler)
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 func stopHttp() {
-	log.Info("Shutting down")
+	logger.Info("Shutting down")
 }
