@@ -217,7 +217,14 @@ var tests = []testItem{
 		domain:   " (theguardian.com) ",
 		url:      "http://www.theguardian.com/world/2013/sep/05/nsa-how-to-remain-secure-surveillance",
 		comments: "https://news.ycombinator.com/item?id=6336523",
-		guid:     "6336523"}}
+		guid:     "6336523"},
+
+	testItem{
+		title:    "Ask HN: Best books you read in the past decade?",
+		domain:   "",
+		url:      "https://news.ycombinator.com/item?id=21900498",
+		comments: "https://news.ycombinator.com/item?id=21900498",
+		guid:     "21900498"}}
 
 func TestHnParsing(t *testing.T) {
 	htmlReader, err := os.Open("hn_test.html")

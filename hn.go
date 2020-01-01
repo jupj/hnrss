@@ -89,6 +89,10 @@ func parseHnHtmlToRss(r io.Reader) (rss *Rss, err error) {
 			if isElement(n.FirstChild, "a") {
 				// Create a new link
 				item.url = getAttr(n.FirstChild, "href")
+				// Replace relative link to HN item with absolute link
+				if strings.HasPrefix(item.url, "item?id=") {
+					item.url = "https://news.ycombinator.com/" + item.url
+				}
 				item.desc = n.FirstChild.FirstChild.Data
 				item.domain = ""
 			}
