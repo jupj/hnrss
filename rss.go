@@ -28,7 +28,7 @@ type RssItem struct {
 // printXml serializes the RSS feed xml to an io.Writer
 func (r *Rss) printXml(w io.Writer) error {
 	// Writes the xml of the rssfeed to w
-	fmt.Fprintln(w, xml.Header)
+	fmt.Fprint(w, xml.Header)
 	enc := xml.NewEncoder(w)
 	enc.Indent("", "  ")
 	return enc.Encode(r)
